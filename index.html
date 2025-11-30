@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>弹珠撞墙游戏</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+
+        body {
+            background-color: #f5f5f5;
+            color: #333;
+            padding: 10px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            overflow: hidden;
+        }
+
+        .panel {
+            background-color: #fff;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: none;
+            margin-bottom: 20px;
+        }
+
+        .panel.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .title {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #555;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            transition: background-color 0.3s, transform 0.1s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-primary {
+            background-color: #3498db;
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background-color: #2980b9;
+        }
+
+        .btn-secondary {
+            background-color: #2ecc71;
+            color: #fff;
+        }
+
+        .btn-secondary:hover {
+            background-color: #27ae60;
+        }
+
+        .btn-danger {
+            background-color: #e74c3c;
+            color: #fff;
+        }
+
+        .btn-danger:hover {
+            background-color: #c0392b;
+        }
+
+        .game-container {
+            position: relative;
+            width: 100%;
+            height: calc(100vh - 350px);
+            min-height: 350px;
+            max-height: 500px;
+            background-color: #1a2634;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+            border: 2px solid #34495e;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .paddle {
+            position: absolute;
+            width: 100px;
+            height: 15px;
+            background-color: #3498db;
+            border-radius: 5px;
+            bottom: 20px;
+            left: 0;
+            margin-left: 0;
+            transform: none;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            transition: background-color 0.3s;
+        }
+
+        .paddle.active {
+            background-color: #2980b9;
+        }
+
+        .ball {
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            background-color: #e74c3c;
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(231, 76, 60, 0.8);
+            transition: background-color 0.3s;
+        }
+
+        .ball.fast {
+            background-color: #f39c12;
+            box-shadow: 0 0 15px rgba(243, 156, 18, 0.9);
+        }
+
+        .wall {
+            position: absolute;
+            background-color: #f1c40f;
+            border: 1px solid #f39c12;
+            width: 60px;
+            height: 15px;
+            border-radius: 3px;
+            transition: all 0.2s;
+            box-shadow: 0 2px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        .wall:hover {
+            background-color: #f39c12;
+            transform: scale(1.05);
+        }
+
+        .game-info {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin: 15px 0;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .info-item {
+            font-size: 16px;
+            font-weight: 500;
+            color: #2c3e50;
+        }
+
+        .info-item span {
+            color: #3498db;
+            font-weight: bold;
+            margin-left: 5px;
+        }
+
+        .ranking-list {
+            list-style: none;
+            margin-top: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .ranking-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            transition: background-color 0.2s;
+        }
+
+        .ranking-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .ranking-item:nth-child(1) {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+        .ranking-item:nth-child(2) {
+            color: #f39c12;
+            font-weight: bold;
+        }
+
+        .ranking-item:nth-child(3) {
+            color: #2ecc71;
+            font-weight: bold;
+        }
+
+        .ranking-item.current-user {
+            background-color: rgba(52, 152, 219, 0.1);
+            border-left: 3px solid #3498db;
+        }
+
+        .game-stats {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .stats-title {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+
+        .rankings-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-top: 15px;
+        }
+
+        .ranking-section {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        @media (max-width: 768px) {
+            .game-container {
+                height: calc(100vh - 500px);
+            }
+
+            .paddle {
+                width: 80px;
+            }
+
+            .wall {
+                width: 50px;
+            }
+
+            .btn {
+                width: 100%;
+                margin-right: 0;
+            }
+
+            .game-info {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .title {
+                font-size: 20px;
+            }
+
+            .form-input {
+                font-size: 14px;
+            }
+
+            .wall {
+                width: 40px;
+            }
+
+            .ball {
+                width: 12px;
+                height: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 登录面板 -->
+        <div id="loginPanel" class="panel active">
+            <h2 class="title">用户登录</h2>
+            <div class="form-group">
+                <label class="form-label" for="loginUsername">用户名</label>
+                <input type="text" id="loginUsername" class="form-input" placeholder="请输入用户名">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="loginPassword">密码</label>
+                <input type="password" id="loginPassword" class="form-input" placeholder="请输入密码">
+            </div>
+            <button id="loginBtn" class="btn btn-primary">登录</button>
+            <button id="toRegisterBtn" class="btn btn-secondary">去注册</button>
+            <p id="loginMsg" style="color: #e74c3c; margin-top: 10px;"></p>
+        </div>
+
+        <!-- 注册面板 -->
+        <div id="registerPanel" class="panel">
+            <h2 class="title">用户注册</h2>
+            <div class="form-group">
+                <label class="form-label" for="registerUsername">用户名</label>
+                <input type="text" id="registerUsername" class="form-input" placeholder="3-12位">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="registerPassword">密码</label>
+                <input type="password" id="registerPassword" class="form-input" placeholder="6-16位">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="confirmPassword">确认密码</label>
+                <input type="password" id="confirmPassword" class="form-input">
+            </div>
+            <button id="registerBtn" class="btn btn-primary">注册</button>
+            <button id="toLoginBtn" class="btn btn-secondary">去登录</button>
+            <p id="registerMsg" style="color: #e74c3c; margin-top: 10px;"></p>
+        </div>
+
+        <!-- 游戏面板 -->
+        <div id="gamePanel" class="panel">
+            <h2 class="title">弹珠撞墙游戏 - 欢迎 <span id="currentUsername"></span></h2>
+            <div class="game-info">
+                <div class="info-item">关卡：<span id="currentLevel">1</span></div>
+                <div class="info-item">时间：<span id="gameTime">00:00</span></div>
+                <div class="info-item">剩余墙体：<span id="remainingWalls">5</span></div>
+                <div class="info-item">最高关卡：<span id="maxLevel">0</span></div>
+            </div>
+            <div class="game-container" id="gameContainer">
+                <div class="paddle" id="paddle"></div>
+                <div class="ball" id="ball"></div>
+            </div>
+            <button id="startGameBtn" class="btn btn-primary">开始游戏</button>
+            <button id="logoutBtn" class="btn btn-danger">退出登录</button>
+            
+            <div class="rankings-container">
+                <div class="ranking-section">
+                    <div class="game-stats">
+                        <h3 class="stats-title">个人记录</h3>
+                        <ul class="ranking-list" id="personalRanking">
+                            <!-- 个人记录将在这里显示 -->
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="ranking-section">
+                    <div class="game-stats">
+                        <h3 class="stats-title">全局排行榜</h3>
+                        <ul class="ranking-list" id="globalRanking">
+                            <!-- 全局排行榜将在这里显示 -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 核心变量
+        let currentUser = null;
+        let gameInterval;
+        const baseSpeed = 3;
+        let ballSpeedX = baseSpeed;
+        let ballSpeedY = -baseSpeed;
+        let walls = [];
+        let gameTime = 0;
+        let isPlaying = false;
+        let currentLevel = 1;
+        let userRecords = [];
+        let globalRankings = [];
+
+        // DOM元素
+        const panels = {
+            login: document.getElementById('loginPanel'),
+            register: document.getElementById('registerPanel'),
+            game: document.getElementById('gamePanel')
+        };
+        
+        // 缓存DOM元素
+        const elements = {
+            loginBtn: document.getElementById('loginBtn'),
+            registerBtn: document.getElementById('registerBtn'),
+            startGameBtn: document.getElementById('startGameBtn'),
+            logoutBtn: document.getElementById('logoutBtn'),
+            gameContainer: document.getElementById('gameContainer'),
+            paddle: document.getElementById('paddle'),
+            ball: document.getElementById('ball'),
+            currentUsername: document.getElementById('currentUsername'),
+            currentLevel: document.getElementById('currentLevel'),
+            gameTime: document.getElementById('gameTime'),
+            remainingWalls: document.getElementById('remainingWalls'),
+            maxLevel: document.getElementById('maxLevel'),
+            personalRanking: document.getElementById('personalRanking'),
+            globalRanking: document.getElementById('globalRanking'),
+            loginMsg: document.getElementById('loginMsg'),
+            registerMsg: document.getElementById('registerMsg')
+        };
+
+        // 初始化
+        function init() {
+            // 检查是否有已登录用户
+            const savedUser = localStorage.getItem('currentUser');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                loadUserRecords();
+                loadGlobalRankings();
+                showPanel('game');
+                elements.currentUsername.textContent = currentUser.username;
+                updateUserStats();
+                resetGame();
+            }
+            
+            // 绑定所有事件
+            bindEvents();
+            
+            // 监听窗口大小变化，重新布局
+            window.addEventListener('resize', () => {
+                if (currentUser) {
+                    resetGameLayout();
+                }
+            });
+        }
+
+        // 事件绑定
+        function bindEvents() {
+            // 登录逻辑
+            elements.loginBtn.addEventListener('click', handleLogin);
+            
+            // 注册逻辑
+            elements.registerBtn.addEventListener('click', handleRegister);
+            
+            // 面板切换
+            document.getElementById('toRegisterBtn').addEventListener('click', () => showPanel('register'));
+            document.getElementById('toLoginBtn').addEventListener('click', () => showPanel('login'));
+            
+            // 退出登录
+            elements.logoutBtn.addEventListener('click', handleLogout);
+            
+            // 开始/暂停游戏
+            elements.startGameBtn.addEventListener('click', toggleGame);
+            
+            // 球拍移动（键盘控制）
+            document.addEventListener('keydown', handlePaddleMove);
+            
+            // 鼠标控制球拍
+            elements.gameContainer.addEventListener('mousemove', handleMouseMove);
+        }
+
+        // 登录处理
+        function handleLogin() {
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            const user = users.find(u => u.username === username && u.password === password);
+            
+            if (user) {
+                currentUser = user;
+                localStorage.setItem('currentUser', JSON.stringify(user));
+                loadUserRecords();
+                loadGlobalRankings();
+                showPanel('game');
+                elements.currentUsername.textContent = username;
+                updateUserStats();
+                resetGame();
+                elements.loginMsg.textContent = '';
+            } else {
+                elements.loginMsg.textContent = '用户名或密码错误';
+            }
+        }
+
+        // 注册处理
+        function handleRegister() {
+            const username = document.getElementById('registerUsername').value.trim();
+            const password = document.getElementById('registerPassword').value.trim();
+            const confirm = document.getElementById('confirmPassword').value.trim();
+            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            
+            // 表单验证
+            if (username.length < 3 || username.length > 12) {
+                elements.registerMsg.textContent = '用户名需3-12位';
+                return;
+            }
+            
+            if (password.length < 6 || password.length > 16) {
+                elements.registerMsg.textContent = '密码需6-16位';
+                return;
+            }
+            
+            if (password !== confirm) {
+                elements.registerMsg.textContent = '两次密码不一致';
+                return;
+            }
+            
+            if (users.some(u => u.username === username)) {
+                elements.registerMsg.textContent = '用户名已存在';
+                return;
+            }
+            
+            // 注册成功
+            const newUser = { 
+                username, 
+                password, 
+                records: [],
+                maxLevel: 0
+            };
+            users.push(newUser);
+            localStorage.setItem('users', JSON.stringify(users));
+            
+            elements.registerMsg.textContent = '注册成功，请登录';
+            elements.registerMsg.style.color = 'green';
+            
+            // 清空表单
+            document.getElementById('registerUsername').value = '';
+            document.getElementById('registerPassword').value = '';
+            document.getElementById('confirmPassword').value = '';
+            
+            // 自动切换到登录面板
+            setTimeout(() => {
+                showPanel('login');
+                document.getElementById('loginUsername').value = username;
+            }, 1500);
+        }
+
+        // 退出登录
+        function handleLogout() {
+            localStorage.removeItem('currentUser');
+            currentUser = null;
+            userRecords = [];
+            globalRankings = [];
+            showPanel('login');
+        }
+
+        // 球拍移动（键盘控制）
+        function handlePaddleMove(e) {
+            const container = elements.gameContainer;
+            const containerWidth = container.clientWidth;
+            const paddle = elements.paddle;
+            const paddleWidth = paddle.offsetWidth;
+            
+            // 获取当前位置
+            let currentLeft = parseInt(paddle.style.left) || 0;
+            
+            // 左移
+            if (e.key === 'ArrowLeft') {
+                currentLeft -= 15;
+                currentLeft = Math.max(0, currentLeft);
+            }
+            
+            // 右移
+            if (e.key === 'ArrowRight') {
+                currentLeft += 15;
+                const maxLeft = containerWidth - paddleWidth;
+                currentLeft = Math.min(maxLeft, currentLeft);
+            }
+            
+            // 应用位置
+            paddle.style.left = currentLeft + 'px';
+        }
+
+        // 球拍移动（鼠标控制）
+        function handleMouseMove(e) {
+            if (!isPlaying) return;
+            
+            const container = elements.gameContainer;
+            const containerRect = container.getBoundingClientRect();
+            const containerWidth = container.clientWidth;
+            const paddle = elements.paddle;
+            const paddleWidth = paddle.offsetWidth;
+            
+            // 计算鼠标在容器内的相对位置
+            let mouseX = Math.floor(e.clientX - containerRect.left);
+            
+            // 计算球拍应该在的位置
+            let paddleLeft = mouseX - paddleWidth / 2;
+            
+            // 限制边界
+            paddleLeft = Math.max(0, paddleLeft);
+            paddleLeft = Math.min(containerWidth - paddleWidth, paddleLeft);
+            
+            // 应用位置
+            paddle.style.left = paddleLeft + 'px';
+        }
+
+        // 显示面板
+        function showPanel(panelName) {
+            Object.keys(panels).forEach(key => {
+                panels[key].classList.remove('active');
+            });
+            panels[panelName].classList.add('active');
+        }
+
+        // 重置游戏布局
+        function resetGameLayout() {
+            const container = elements.gameContainer;
+            const containerWidth = container.clientWidth;
+            const containerHeight = container.clientHeight;
+            const paddle = elements.paddle;
+            const paddleWidth = paddle.offsetWidth;
+            const ball = elements.ball;
+            const ballSize = ball.offsetWidth;
+            
+            // 重新定位球拍
+            let paddleLeft = parseInt(paddle.style.left) || 0;
+            const maxPaddleLeft = containerWidth - paddleWidth;
+            paddleLeft = Math.min(maxPaddleLeft, Math.max(0, paddleLeft));
+            paddle.style.left = paddleLeft + 'px';
+            
+            // 重新定位小球
+            let ballLeft = parseInt(ball.style.left) || 0;
+            let ballTop = parseInt(ball.style.top) || 0;
+            
+            ballLeft = Math.min(containerWidth - ballSize, Math.max(0, ballLeft));
+            ballTop = Math.min(containerHeight - ballSize, Math.max(0, ballTop));
+            
+            ball.style.left = ballLeft + 'px';
+            ball.style.top = ballTop + 'px';
+            
+            // 重新定位墙体
+            walls.forEach(wall => {
+                // 确保墙体仍在边界内
+                wall.left = Math.min(containerWidth - wall.width, Math.max(20, wall.left));
+                wall.top = Math.min(containerHeight - 100, Math.max(20, wall.top));
+                wall.element.style.left = wall.left + 'px';
+                wall.element.style.top = wall.top + 'px';
+            });
+        }
+
+        // 重置游戏
+        function resetGame() {
+            const container = elements.gameContainer;
+            const containerWidth = container.clientWidth;
+            const containerHeight = container.clientHeight;
+            const paddle = elements.paddle;
+            const paddleWidth = paddle.offsetWidth;
+            const ball = elements.ball;
+            const ballSize = ball.offsetWidth;
+            
+            // 重置球拍位置（居中）
+            const paddleLeft = Math.floor((containerWidth - paddleWidth) / 2);
+            paddle.style.left = paddleLeft + 'px';
+            paddle.classList.remove('active');
+            
+            // 重置小球位置
+            const ballLeft = Math.floor((containerWidth - ballSize) / 2);
+            const ballTop = Math.floor(containerHeight - 50);
+            ball.style.left = ballLeft + 'px';
+            ball.style.top = ballTop + 'px';
+            ball.classList.remove('fast');
+            
+            // 重置速度
+            const speedMultiplier = 1 + (currentLevel - 1) * 0.1;
+            ballSpeedX = (Math.random() > 0.5 ? baseSpeed : -baseSpeed) * speedMultiplier;
+            ballSpeedY = -baseSpeed * speedMultiplier;
+            
+            // 小球速度视觉反馈
+            if (speedMultiplier > 1.3) {
+                ball.classList.add('fast');
+            }
+            
+            // 清除旧墙体
+            walls.forEach(wall => wall.element.remove());
+            walls = [];
+            
+            // 生成新的随机位置墙体
+            const wallCount = 5 + (currentLevel - 1) * 2;
+            generateRandomWalls(wallCount);
+            
+            // 重置状态
+            gameTime = 0;
+            elements.gameTime.textContent = '00:00';
+            elements.remainingWalls.textContent = walls.length;
+            elements.currentLevel.textContent = currentLevel;
+            isPlaying = false;
+            elements.startGameBtn.textContent = '开始游戏';
+        }
+
+        // 生成随机位置的墙体
+        function generateRandomWalls(count) {
+            const container = elements.gameContainer;
+            const containerWidth = container.clientWidth;
+            const containerHeight = container.clientHeight;
+            const wallWidth = 60;
+            const wallHeight = 15;
+            const minGap = 15; // 墙体之间的最小间距
+            const maxAttempts = 100; // 防止死循环的最大尝试次数
+            
+            // 限制墙体最大数量
+            const maxPossibleWalls = Math.floor((containerWidth * containerHeight) / ((wallWidth + minGap) * (wallHeight + minGap)));
+            const actualCount = Math.min(count, maxPossibleWalls, 30); // 最多30个墙体
+            
+            let attempts = 0;
+            let createdWalls = 0;
+            
+            // 生成随机位置的墙体，确保不重叠、不超出边界
+            while (createdWalls < actualCount && attempts < maxAttempts) {
+                attempts++;
+                
+                // 随机生成位置（避开底部球拍区域和边界）
+                const randomLeft = Math.floor(Math.random() * (containerWidth - wallWidth - 40)) + 20;
+                const randomTop = Math.floor(Math.random() * (containerHeight - wallHeight - 120)) + 20;
+                
+                // 检查是否与已有墙体重叠
+                let isOverlapping = false;
+                for (const wall of walls) {
+                    const overlapX = !(randomLeft + wallWidth < wall.left - minGap || randomLeft > wall.left + wall.width + minGap);
+                    const overlapY = !(randomTop + wallHeight < wall.top - minGap || randomTop > wall.top + wall.height + minGap);
+                    
+                    if (overlapX && overlapY) {
+                        isOverlapping = true;
+                        break;
+                    }
+                }
+                
+                // 如果不重叠且位置合法，创建墙体
+                if (!isOverlapping) {
+                    const wallElement = document.createElement('div');
+                    wallElement.className = 'wall';
+                    wallElement.style.left = randomLeft + 'px';
+                    wallElement.style.top = randomTop + 'px';
+                    elements.gameContainer.appendChild(wallElement);
+                    
+                    walls.push({
+                        left: randomLeft, 
+                        top: randomTop, 
+                        width: wallWidth, 
+                        height: wallHeight,
+                        element: wallElement, 
+                        active: true
+                    });
+                    
+                    createdWalls++;
+                }
+            }
+        }
+
+        // 切换游戏状态
+        function toggleGame() {
+            if (isPlaying) {
+                clearInterval(gameInterval);
+                elements.startGameBtn.textContent = '继续游戏';
+                elements.paddle.classList.remove('active');
+            } else {
+                gameInterval = setInterval(updateGame, 20);
+                elements.startGameBtn.textContent = '暂停游戏';
+                elements.paddle.classList.add('active');
+            }
+            isPlaying = !isPlaying;
+        }
+
+        // 更新游戏状态
+        function updateGame() {
+            const container = elements.gameContainer;
+            const containerWidth = container.clientWidth;
+            const containerHeight = container.clientHeight;
+            const paddle = elements.paddle;
+            const ball = elements.ball;
+            const ballSize = ball.offsetWidth;
+
+            // 获取当前位置
+            let ballX = parseInt(ball.style.left) || 0;
+            let ballY = parseInt(ball.style.top) || 0;
+            const paddleLeft = parseInt(paddle.style.left) || 0;
+            const paddleWidth = paddle.offsetWidth;
+            const paddleTop = paddle.offsetTop;
+
+            // 计算新位置
+            let newBallX = Math.floor(ballX + ballSpeedX);
+            let newBallY = Math.floor(ballY + ballSpeedY);
+
+            // 边界碰撞检测
+            let bounced = false;
+            
+            // 左边界
+            if (newBallX <= 0) {
+                newBallX = 0;
+                ballSpeedX = Math.abs(ballSpeedX); // 向右反弹
+                bounced = true;
+            }
+            // 右边界
+            else if (newBallX + ballSize >= containerWidth) {
+                newBallX = containerWidth - ballSize;
+                ballSpeedX = -Math.abs(ballSpeedX); // 向左反弹
+                bounced = true;
+            }
+            
+            // 上边界
+            if (newBallY <= 0) {
+                newBallY = 0;
+                ballSpeedY = Math.abs(ballSpeedY); // 向下反弹
+                bounced = true;
+            }
+
+            // 底部边界（游戏结束）
+            if (newBallY + ballSize >= containerHeight) {
+                endGame(false);
+                return;
+            }
+
+            // 球拍碰撞检测
+            if (
+                newBallY + ballSize >= paddleTop &&  // 小球底部接触球拍顶部
+                newBallY <= paddleTop + paddle.offsetHeight &&  // 小球顶部在球拍范围内
+                newBallX + ballSize > paddleLeft &&  // 小球右侧超过球拍左侧
+                newBallX < paddleLeft + paddleWidth  // 小球左侧在球拍右侧之前
+            ) {
+                // 计算碰撞位置
+                const paddleCenter = paddleLeft + paddleWidth / 2;
+                const ballCenter = newBallX + ballSize / 2;
+                const hitOffset = ballCenter - paddleCenter;
+                
+                // 反弹：Y轴速度反向，保持大小一致
+                ballSpeedY = -Math.abs(ballSpeedY);
+                
+                // X轴速度根据碰撞位置调整，但限制最大速度
+                ballSpeedX = (hitOffset / (paddleWidth / 2)) * baseSpeed * 1.2;
+                ballSpeedX = Math.max(-baseSpeed * 1.8, Math.min(baseSpeed * 1.8, ballSpeedX));
+                
+                // 防止小球卡在球拍上
+                newBallY = paddleTop - ballSize - 1;
+                
+                bounced = true;
+            }
+
+            // 墙体碰撞检测
+            let remainingWalls = 0;
+            walls.forEach(wall => {
+                if (wall.active) {
+                    remainingWalls++;
+                    
+                    // 精确碰撞检测
+                    if (
+                        newBallX < wall.left + wall.width &&
+                        newBallX + ballSize > wall.left &&
+                        newBallY < wall.top + wall.height &&
+                        newBallY + ballSize > wall.top
+                    ) {
+                        // 标记墙体为非活动
+                        wall.active = false;
+                        wall.element.style.opacity = '0';
+                        wall.element.style.transform = 'scale(0.9)';
+                        
+                        // 计算碰撞方向
+                        const overlapRight = newBallX + ballSize - wall.left;
+                        const overlapLeft = wall.left + wall.width - newBallX;
+                        const overlapBottom = newBallY + ballSize - wall.top;
+                        const overlapTop = wall.top + wall.height - newBallY;
+                        
+                        // 选择最小重叠方向反弹
+                        const minOverlap = Math.min(overlapRight, overlapLeft, overlapBottom, overlapTop);
+                        
+                        if (minOverlap === overlapRight || minOverlap === overlapLeft) {
+                            ballSpeedX *= -1;
+                            // 调整位置避免卡在墙里
+                            if (minOverlap === overlapRight) newBallX = wall.left - ballSize;
+                            else newBallX = wall.left + wall.width;
+                        } else {
+                            ballSpeedY *= -1;
+                            // 调整位置避免卡在墙里
+                            if (minOverlap === overlapBottom) newBallY = wall.top - ballSize;
+                            else newBallY = wall.top + wall.height;
+                        }
+                        
+                        bounced = true;
+                    }
+                }
+            });
+
+            // 更新剩余墙体数量
+            elements.remainingWalls.textContent = remainingWalls;
+
+            // 关卡完成
+            if (remainingWalls === 0) {
+                saveLevelRecord();
+                currentLevel++;
+                clearInterval(gameInterval);
+                isPlaying = false;
+                
+                if (currentLevel - 1 > currentUser.maxLevel) {
+                    currentUser.maxLevel = currentLevel - 1;
+                    updateUserInfo();
+                }
+                
+                setTimeout(() => {
+                    alert(`恭喜！成功通过第${currentLevel - 1}关！`);
+                    elements.startGameBtn.textContent = '开始第' + currentLevel + '关';
+                    resetGame();
+                    updateUserStats();
+                }, 300);
+                return;
+            }
+
+            // 更新游戏时间
+            gameTime++;
+            const minutes = Math.floor(gameTime / 60).toString().padStart(2, '0');
+            const seconds = (gameTime % 60).toString().padStart(2, '0');
+            elements.gameTime.textContent = `${minutes}:${seconds}`;
+
+            // 更新小球位置
+            ball.style.left = newBallX + 'px';
+            ball.style.top = newBallY + 'px';
+        }
+
+        // 结束游戏
+        function endGame(isSuccess) {
+            clearInterval(gameInterval);
+            isPlaying = false;
+            elements.startGameBtn.textContent = '重新开始';
+            elements.paddle.classList.remove('active');
+            
+            if (!isSuccess) {
+                saveLevelRecord();
+                alert(`游戏结束！你当前的关卡是：${currentLevel}`);
+                currentLevel = 1;
+                resetGame();
+            }
+        }
+
+        // 加载用户记录
+        function loadUserRecords() {
+            if (currentUser && currentUser.records) {
+                userRecords = [...currentUser.records];
+                userRecords.sort((a, b) => b.level - a.level || a.time - b.time);
+            } else {
+                userRecords = [];
+            }
+        }
+
+        // 加载全局排行榜
+        function loadGlobalRankings() {
+            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            globalRankings = users.map(user => ({
+                username: user.username,
+                maxLevel: user.maxLevel || 0,
+                // 找到该用户最高关卡的最快时间
+                bestTime: user.records && user.records.length 
+                    ? user.records.reduce((best, record) => {
+                        if (record.level > best.level || (record.level === best.level && record.time < best.time)) {
+                            return { level: record.level, time: record.time };
+                        }
+                        return best;
+                    }, { level: 0, time: Infinity }).time
+                    : Infinity
+            })).sort((a, b) => {
+                // 先按最高关卡排序
+                if (b.maxLevel !== a.maxLevel) {
+                    return b.maxLevel - a.maxLevel;
+                }
+                // 关卡相同则按时间排序
+                return a.bestTime - b.bestTime;
+            }).slice(0, 10); // 只取前10名
+        }
+
+        // 保存关卡记录
+        function saveLevelRecord() {
+            const record = {
+                level: currentLevel,
+                time: gameTime,
+                date: new Date().toLocaleString()
+            };
+            
+            userRecords.push(record);
+            userRecords = userRecords.sort((a, b) => b.level - a.level || a.time - b.time).slice(0, 10);
+            
+            currentUser.records = userRecords;
+            updateUserInfo();
+            loadGlobalRankings(); // 更新全局排名
+            updateUserStats();
+        }
+
+        // 更新用户信息到本地存储
+        function updateUserInfo() {
+            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            const userIndex = users.findIndex(u => u.username === currentUser.username);
+            
+            if (userIndex !== -1) {
+                users[userIndex] = currentUser;
+                localStorage.setItem('users', JSON.stringify(users));
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            }
+        }
+
+        // 更新用户统计信息
+        function updateUserStats() {
+            elements.maxLevel.textContent = currentUser.maxLevel || 0;
+            
+            // 更新个人记录
+            elements.personalRanking.innerHTML = '';
+            if (userRecords.length === 0) {
+                const emptyItem = document.createElement('li');
+                emptyItem.className = 'ranking-item';
+                emptyItem.textContent = '暂无游戏记录';
+                elements.personalRanking.appendChild(emptyItem);
+            } else {
+                userRecords.forEach((record, index) => {
+                    const minutes = Math.floor(record.time / 60).toString().padStart(2, '0');
+                    const seconds = (record.time % 60).toString().padStart(2, '0');
+                    
+                    const listItem = document.createElement('li');
+                    listItem.className = 'ranking-item';
+                    listItem.innerHTML = `
+                        <span>第${index + 1}名</span>
+                        <span>关卡${record.level}</span>
+                        <span>时间 ${minutes}:${seconds}</span>
+                        <span>${record.date}</span>
+                    `;
+                    elements.personalRanking.appendChild(listItem);
+                });
+            }
+            
+            // 更新全局排行榜
+            elements.globalRanking.innerHTML = '';
+            if (globalRankings.length === 0) {
+                const emptyItem = document.createElement('li');
+                emptyItem.className = 'ranking-item';
+                emptyItem.textContent = '暂无游戏记录';
+                elements.globalRanking.appendChild(emptyItem);
+            } else {
+                globalRankings.forEach((user, index) => {
+                    const isCurrentUser = currentUser && user.username === currentUser.username;
+                    const minutes = user.bestTime !== Infinity 
+                        ? Math.floor(user.bestTime / 60).toString().padStart(2, '0') 
+                        : '--';
+                    const seconds = user.bestTime !== Infinity
+                        ? (user.bestTime % 60).toString().padStart(2, '0')
+                        : '--';
+                    
+                    const listItem = document.createElement('li');
+                    listItem.className = `ranking-item ${isCurrentUser ? 'current-user' : ''}`;
+                    listItem.innerHTML = `
+                        <span>第${index + 1}名</span>
+                        <span>${user.username}</span>
+                        <span>最高关卡 ${user.maxLevel}</span>
+                        <span>最佳时间 ${minutes}:${seconds}</span>
+                    `;
+                    elements.globalRanking.appendChild(listItem);
+                });
+            }
+        }
+
+        // 启动游戏
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
